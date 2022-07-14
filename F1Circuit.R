@@ -1,4 +1,5 @@
 library(readr)
+#library(plyr)
 library(dplyr)
 library(tidyverse)
 
@@ -9,7 +10,7 @@ racesF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/races.csv", 
 resultsF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/results.csv", header = TRUE, stringsAsFactors=FALSE)
 driversF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/drivers.csv", header = TRUE, stringsAsFactors=FALSE)
 qualifyF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/qualifying.csv", header = TRUE, stringsAsFactors=FALSE)
-pitstopsF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/pitstops.csv", header = TRUE, stringsAsFactors=FALSE)
+pitstopsF1 <- read.csv("C:/Users/paolo/Desktop/F1_Circuit_Project/data/pit_stops.csv", header = TRUE, stringsAsFactors=FALSE)
 
 ############################################################## USEFUL ############################################################## 
 #Driver ID and Name [DRIVERID, SURNAME]
@@ -56,13 +57,15 @@ winnersRaceID <- winnersAllCirc %>% inner_join(allowedRaces, by = "raceId")
 
 ############################ POLE QUALIFIERS PER RACE, CONNECTED TO RACEID WITH DRIVERID (NEW QUALIFY SISTEM FROM 2006 TO PRESENT)
 #ALL POLE QUALIFIERS PER RACE [RACEID, DRIVERID]
-raceQualifiers <- qualifyF1 %>% filter(position == 1) %>% select(raceId, driverId)
+raceQualifiers <- qualifyF1 %>% filter(position == 1) %>% select(raceId, driverId) #raceQualifiers <- resultsF1 %>% filter(grid == 1) %>% select(raceId, driverId)
+
 
 #Qualifiers of Allowed Races [RACEID, DRIVERID, SURNAME]
 qualifyAllCirc <- raceQualifiers %>% inner_join(driverIdName, by = "driverId")
 
 #TABLE WITH EVERY POLE OF EVERY RACE ALLOWED WITH CIRCUITID [RACEID, DRIVERID, CIRCUITID]
 qualifyRaceID <- qualifyAllCirc %>% inner_join(allowedRaces, by = "raceId")
+qualifyRaceIDCircID <- qualifyRaceID %>% select(raceId, driverId, circuitId, surname)
 qualifyRaceID = qualifyRaceID %>% select(raceId, driverId, surname)
 
 
@@ -71,7 +74,7 @@ qualifyRaceID = qualifyRaceID %>% select(raceId, driverId, surname)
 
 ############################ FUNCTION CONFRONTING POLE QUALIFIERS AND RACE WINNERS - CHECKING ONLY FIRST POSITION CHANGES
 #WINNERS AND POLES [RACEID, DRIVERID.X, SURNAME.X, CIRCUITID, DRIVERID.Y, SURNAME.Y] WHERE X = WINNER AND Y = POLE
-winnersAndPoles <- winnersRaceID %>% inner_join(qualifyRaceID, by = "raceId")
+winnersAndPoles <- winnersRaceID %>% inner_join(qualifyRaceID, by = "raceId") # 2006 and next years only
 
 #FUNCTION THAT CHECK IF THE WINNER HAS WON FROM POLE OR NOT
 #put a select from winners and poles?
@@ -96,36 +99,47 @@ differentWinnersPerCircuit <- count(winnersWCircuitGroupSurCId, location, circui
 #differentWinnersPerCircuit #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 
-############################ DIFFERENT POLE QUALIFIERS PER CIRCUIT
+############################ DIFFERENT POLE QUALIFIERS PER CIRCUIT (FROM 2006 TO PRESENT)
+qualifyDriCirc <- qualifyRaceIDCircID %>% select(driverId, circuitId, surname)
+qualifyWCircuitGrouped <- count(qualifyDriCirc, circuitId, driverId, sort = TRUE) # USE THIS ONE
+qualifyWCircuitGroupedSurname <- qualifyWCircuitGrouped %>% inner_join(driverIdName, by = "driverId") #for check
+#qualifyWCircuitGroupedSurname #for check
+qualifyWCircuitGroupSurCId <- qualifyWCircuitGroupedSurname %>% inner_join(circIdLoc, by = "circuitId") #for check
+#qualifyWCircuitGroupSurCId #for check
 
-
-
-
-############################ NUMBER OF ALL POSITION CHANGES PER CIRCUIT - USE RESULTF1
-
-
-############################ PIT STOP NUMBER - MORE VARIABLE RACE
-
-#MEAN PIT STOP TIME?
+#TOTAL NUMBER OF DIFFERENT POLEMEN PER CIRCUIT [LOCATION, CIRCUITID, N] (N IS TOTAL)
+differentQualifyPerCircuit <- count(qualifyWCircuitGroupSurCId, location, circuitId)
+#differentQualifyPerCircuit  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 
 
 ############################ MOST WIN OF A SINGLE DRIVER PER CIRCUIT
+mostWinsPerCircuit <- winnersWCircuitGroupSurCId %>% group_by(circuitId) %>% summarise(n = max(n))
+mostWinsPerCircuitWCId <- mostWinsPerCircuit %>% inner_join(circIdLoc, by = "circuitId") 
+
+#MOST WINS PER CIRCUIT BY ONE PILOT [CIRCUITID, N, LOCATION (FOR BETTER READ)]
+#mostWinsPerCircuitWCId  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 
 ############################ MOST POLE OF A SINGLE DRIVER PER CIRCUIT
+mostPolesPerCircuit <- qualifyWCircuitGroupSurCId %>% group_by(circuitId) %>% summarise(n = max(n))
+mostPolesPerCircuitWCId <- mostPolesPerCircuit %>% inner_join(circIdLoc, by = "circuitId") 
+
+#MOST POLES PER CIRCUIT BY ONE PILOT [CIRCUITID, N, LOCATION (FOR BETTER READ)]
+#mostPolesPerCircuitWCId #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+
+
+############################ PERCENTAGE OF WINS FROM POLE PER CIRCUIT
+racesWPoleonCircuit <- ddply(winnerFromPoleCount, "circuitId", numcolwise(sum))
+onlyWinsPerCircuit <- filter(winnerFromPoleCount, hasWonFromPole == "yes") 
+totalAndWins <- onlyWinsPerCircuit %>% inner_join(racesWPoleonCircuit, by = "circuitId") %>% select(circuitId, n.x, n.y)
+
+mediaOfWinsFromPole <- totalAndWins
+mediaOfWinsFromPole$percentuale = mediaOfWinsFromPole$n.x / mediaOfWinsFromPole$n.y * 100 
+mediaOfWinsFromPole
+############################ NUMBER OF ALL POSITION CHANGES PER CIRCUIT/RACE IN A CIRCUIT - USE RESULTF1
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+############################ PIT STOP NUMBER - MORE VARIABLE RACe
+  

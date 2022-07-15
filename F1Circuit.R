@@ -1,5 +1,5 @@
 library(readr)
-#library(plyr)
+library(plyr)
 library(dplyr)
 library(tidyverse)
 
@@ -32,11 +32,11 @@ circXrac <- circIdLoc %>% inner_join(racesIdCId, by = "circuitId")
 
 #Number of races in a circuit [LOCATION, CIRCUITID]
 raceCount <- count(circXrac, location, circuitId, sort = TRUE) 
-#raceCount #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+#raceCount #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 #RACE ALLOWED TO USE [LOCATION, CIRCUITID, N (of races)]
 allowedCircuit <- raceCount %>% filter(n >= 10)
-#allowedCircuit #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+#allowedCircuit #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 #CIRCUIT ALLOWED FOR EVERY RACE
 allowedRaces <- allowedCircuit %>% inner_join(circXrac, by = "circuitId") %>% select(circuitId, raceId)
@@ -50,14 +50,14 @@ raceWinners <- resultsF1 %>% filter(position == 1) %>% select(raceId, driverId)
 winnersAllCirc <- raceWinners %>% inner_join(driverIdName, by = "driverId")
 
 
-#TABLE WITH EVERY WINNER OF EVERY RACE ALLOWED WITH CIRCUITID [RACEID, DRIVERID, CIRCUITID]
+#TABLE WITH EVERY WINNER OF EVERY RACE ALLOWED WITH CIRCUITID [RACEID, DRIVERID, SURNAME, CIRCUITID] - 916
 winnersRaceID <- winnersAllCirc %>% inner_join(allowedRaces, by = "raceId")
 #winnersRaceID = winnersRaceID %>% select(raceId, driverId, circuitId)
 
 
 ############################ POLE QUALIFIERS PER RACE, CONNECTED TO RACEID WITH DRIVERID (NEW QUALIFY SISTEM FROM 2006 TO PRESENT)
 #ALL POLE QUALIFIERS PER RACE [RACEID, DRIVERID]
-raceQualifiers <- qualifyF1 %>% filter(position == 1) %>% select(raceId, driverId) #raceQualifiers <- resultsF1 %>% filter(grid == 1) %>% select(raceId, driverId)
+raceQualifiers <- resultsF1 %>% filter(grid == 1) %>% select(raceId, driverId) #raceQualifiers <- resultsF1 %>% filter(grid == 1) %>% select(raceId, driverId)
 
 
 #Qualifiers of Allowed Races [RACEID, DRIVERID, SURNAME]
@@ -130,16 +130,57 @@ mostPolesPerCircuitWCId <- mostPolesPerCircuit %>% inner_join(circIdLoc, by = "c
 
 
 ############################ PERCENTAGE OF WINS FROM POLE PER CIRCUIT
-racesWPoleonCircuit <- ddply(winnerFromPoleCount, "circuitId", numcolwise(sum))
+racesWPoleonCircuit <- ddply(winnerFromPoleCount,"circuitId",numcolwise(sum)) 
 onlyWinsPerCircuit <- filter(winnerFromPoleCount, hasWonFromPole == "yes") 
 totalAndWins <- onlyWinsPerCircuit %>% inner_join(racesWPoleonCircuit, by = "circuitId") %>% select(circuitId, n.x, n.y)
 
 mediaOfWinsFromPole <- totalAndWins
 mediaOfWinsFromPole$percentuale = mediaOfWinsFromPole$n.x / mediaOfWinsFromPole$n.y * 100 
-mediaOfWinsFromPole
-############################ NUMBER OF ALL POSITION CHANGES PER CIRCUIT/RACE IN A CIRCUIT - USE RESULTF1
+
+#MEDIA OF WINS FROM POLE [CIRCUITID, N.X (WINS), N.Y (TOTAL), PERCENTUALE]
+#mediaOfWinsFromPole #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
 
 
+############################ POSITION CHANGES PER CIRCUIT - POSITIONCHANGES/TOTALRACESINACIRCUIT
+positionChanged <- resultsF1 %>% select(raceId, grid, position)
+positionChanged$positionISChanged <- ifelse(positionChanged$grid == positionChanged$position, 'no', 'yes')
+positionChanged <- positionChanged[!positionChanged$position == "\\N", ]
 
-############################ PIT STOP NUMBER - MORE VARIABLE RACe
-  
+positionChangedCount <- count(positionChanged, raceId, positionISChanged)
+positionChangedCircuitId <- positionChangedCount %>% inner_join(circXrac, by = "raceId")
+positionHasChanged <- filter(positionChangedCircuitId, positionISChanged == "yes") %>% select(circuitId, n, location) 
+positionChangesPerCircuit <- ddply(positionHasChanged,"circuitId",numcolwise(sum))
+positionChangesPerCircuitAllowed <- positionChangesPerCircuit %>% inner_join(allowedCircuit, by = "circuitId")
+meanOfPositionChanges <- positionChangesPerCircuitAllowed %>% select(circuitId, location)
+meanOfPositionChanges$CambiPosizioneMedi = positionChangesPerCircuitAllowed$n.x / positionChangesPerCircuitAllowed$n.y
+
+#MEDIA OF POSITION CHANGES [CIRCUITID, LOCATION, CAMBIPOSIZIONEMEDI]
+#meanOfPositionChanges #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+
+
+############################ ACCIDENTS PER CIRCUIT - MOST DANGEROUS CIRCUIT
+#3 - ACCIDENT
+#4 - COLLISION
+#31 - RETIRED
+#130 - COLLISION DAMAGE
+#137 - DAMAGE
+
+statusOfAllRaces <- resultsF1 %>% select(raceId, statusId)
+dnfOfAllRaces <- statusOfAllRaces %>% filter(statusId == 3 | statusId == 4 | statusId == 31 | statusId == 130 | statusId == 137)
+dnfOfAllRacesCount <- count(dnfOfAllRaces, raceId, statusId)
+dnfOfAllowedRacesCount <- dnfOfAllRacesCount %>% inner_join(allowedRaces, by = "raceId") %>% select(circuitId, statusId, n)
+dnfAllowedCircuits <- dnfOfAllowedRacesCount %>% select(circuitId, n)
+
+#TOTAL OF DNF PER CIRCUIT [CIRCUITID, N (OF DNF)]
+dnfAllowedCircuits <- ddply(dnfAllowedCircuits, "circuitId", numcolwise(sum))
+#dnfAllowedCircuits #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+
+############################  MEAN OF DNF PER CIRCUIT 
+totAndDnfPerCircuit <- dnfAllowedCircuits %>% inner_join(allowedCircuit, by = "circuitId")
+meanOfDnfPerCircuit <- totAndDnfPerCircuit
+meanOfDnfPerCircuit$meanOfDNF = meanOfDnfPerCircuit$n.x / meanOfDnfPerCircuit$n.y
+meanOfDnfPerCircuit$meanOfDNF = trunc(meanOfDnfPerCircuit$meanOfDNF * 10^2)/10^2
+
+#MEAN OF DNF PER CIRCUIT [CIRCUITID, MEANOFDNF]
+onlyMeanOfDNF <- meanOfDnfPerCircuit %>% select(circuitId, meanOfDNF)
+#onlyMeanOfDNF  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC

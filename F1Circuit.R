@@ -2,6 +2,8 @@ library(readr)
 library(plyr)
 library(dplyr)
 library(tidyverse)
+library(ggplot2)
+
 
 
 # DATA imported from CSV files
@@ -33,10 +35,17 @@ circXrac <- circIdLoc %>% inner_join(racesIdCId, by = "circuitId")
 #Number of races in a circuit [LOCATION, CIRCUITID]
 raceCount <- count(circXrac, location, circuitId, sort = TRUE) 
 #raceCount #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+raceCountGraph <- raceCount %>% select(location, n)
+raceCountPlot <- ggplot(raceCountGraph, aes(x=location, y= n)) + geom_bar(width=0.8, stat='identity') + xlab("Circuits") + ylab("Races") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/raceCountPlot.png", plot = raceCountPlot, units = "px", width = 2815, height = 1734)
+
 
 #RACE ALLOWED TO USE [LOCATION, CIRCUITID, N (of races)]
 allowedCircuit <- raceCount %>% filter(n >= 10)
 #allowedCircuit #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+allowedCircuitPlot <- ggplot(allowedCircuit, aes(x=reorder(location, -n, sum), y= n)) + geom_bar(width=0.8, stat='identity') + xlab("Circuits") + ylab("Races") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/allowedCircuitPlot.png", plot = allowedCircuitPlot, units = "px", width = 2815, height = 1734)
+
 
 #CIRCUIT ALLOWED FOR EVERY RACE
 allowedRaces <- allowedCircuit %>% inner_join(circXrac, by = "circuitId") %>% select(circuitId, raceId)
@@ -84,6 +93,15 @@ winnerFromPole$hasWonFromPole <- ifelse(winnersAndPoles$driverId.x == winnersAnd
 #WINNERFROMPOLECOUNT [CIRCUITID, HASWONFROMPOLE, N]
 winnerFromPoleCount <- count(winnerFromPole, circuitId, hasWonFromPole, sort = FALSE)
 #winnerFromPoleCount #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+winnerFromPoleCountWLoc <- winnerFromPoleCount %>% inner_join(circIdLoc, by = "circuitId") %>% select(location, hasWonFromPole, n)
+winnerFromPolePlot <- ggplot(winnerFromPoleCountWLoc, aes(x=location, y=n, fill = hasWonFromPole)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge") +
+  scale_fill_discrete(name = "Has won from pole position") +
+  xlab("Circuits") + 
+  ylab("Times") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/winnerFromPolePlot.png", plot = winnerFromPolePlot, units = "px", width = 2815, height = 1734)
+
 
 ############################ DIFFERENT WINNERS FOR CIRCUIT
 #916 winners allowed
@@ -97,6 +115,13 @@ winnersWCircuitGroupSurCId <- winnersWCircuitGroupedSurname %>% inner_join(circI
 #TOTAL NUMBER OF DIFFERENT WINNERS PER CIRCUIT [LOCATION, CIRCUITID, N] (N IS TOTAL)
 differentWinnersPerCircuit <- count(winnersWCircuitGroupSurCId, location, circuitId) #count(winnersWCircuitGroupSurCId, circuitId, location)
 #differentWinnersPerCircuit #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+differentWinnersPerCircuitWLoc <- differentWinnersPerCircuit %>% select(location, n)
+differentWinnersPlot <- ggplot(differentWinnersPerCircuitWLoc, aes(x=reorder(location, -n, sum), y=n) ) +
+  geom_bar(width=0.8, stat='identity', position = "dodge", fill = "darkturquoise") +
+  xlab("Circuits") + 
+  ylab("Times") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/differentWinnersPlot.png", plot = differentWinnersPlot, units = "px", width = 2815, height = 1734)
 
 
 ############################ DIFFERENT POLE QUALIFIERS PER CIRCUIT (FROM 2006 TO PRESENT)
@@ -110,7 +135,13 @@ qualifyWCircuitGroupSurCId <- qualifyWCircuitGroupedSurname %>% inner_join(circI
 #TOTAL NUMBER OF DIFFERENT POLEMEN PER CIRCUIT [LOCATION, CIRCUITID, N] (N IS TOTAL)
 differentQualifyPerCircuit <- count(qualifyWCircuitGroupSurCId, location, circuitId)
 #differentQualifyPerCircuit  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
-
+differentQualifyPerCircuitWLoc <- differentQualifyPerCircuit %>% select(location, n)
+differentQualifyPlot <- ggplot(differentQualifyPerCircuitWLoc, aes(x=reorder(location, -n, sum), y=n)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge", fill = "brown2") +
+  xlab("Circuits") + 
+  ylab("Times") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/differentQualifyPlot.png", plot = differentQualifyPlot, units = "px", width = 2815, height = 1734)
 
 
 ############################ MOST WIN OF A SINGLE DRIVER PER CIRCUIT
@@ -119,6 +150,12 @@ mostWinsPerCircuitWCId <- mostWinsPerCircuit %>% inner_join(circIdLoc, by = "cir
 
 #MOST WINS PER CIRCUIT BY ONE PILOT [CIRCUITID, N, LOCATION (FOR BETTER READ)]
 #mostWinsPerCircuitWCId  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+mostWinsPerCircuitPlot <- ggplot(mostWinsPerCircuitWCId, aes(x=reorder(location, -n), y=n)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge", fill = "darkturquoise") +
+  xlab("Circuits") + 
+  ylab("Most wins of a single driver") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/mostWinsPerCircuitPlot.png", plot = mostWinsPerCircuitPlot, units = "px", width = 2815, height = 1734)
 
 
 ############################ MOST POLE OF A SINGLE DRIVER PER CIRCUIT
@@ -127,6 +164,13 @@ mostPolesPerCircuitWCId <- mostPolesPerCircuit %>% inner_join(circIdLoc, by = "c
 
 #MOST POLES PER CIRCUIT BY ONE PILOT [CIRCUITID, N, LOCATION (FOR BETTER READ)]
 #mostPolesPerCircuitWCId #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+mostPolesPerCircuitPlot <- ggplot(mostPolesPerCircuitWCId, aes(x=reorder(location, -n), y=n)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge", fill = "brown2") +
+  xlab("Circuits") + 
+  ylab("Most pole position of a single driver") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/mostPolesPerCircuitPlot.png", plot = mostPolesPerCircuitPlot, units = "px", width = 2815, height = 1734)
+
 
 
 ############################ PERCENTAGE OF WINS FROM POLE PER CIRCUIT
@@ -139,6 +183,14 @@ mediaOfWinsFromPole$percentuale = mediaOfWinsFromPole$n.x / mediaOfWinsFromPole$
 
 #MEDIA OF WINS FROM POLE [CIRCUITID, N.X (WINS), N.Y (TOTAL), PERCENTUALE]
 #mediaOfWinsFromPole #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+
+mediaOfWinsFromPoleWLoc <- mediaOfWinsFromPole %>% inner_join(circIdLoc, by = "circuitId") %>% select(location, percentuale)
+mediaOfWinsFromPolePlot <- ggplot(mediaOfWinsFromPoleWLoc, aes(x=reorder(location, -percentuale), y=percentuale)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge") +
+  xlab("Circuits") + 
+  ylab("Percentage of wins from pole position") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/mediaOfWinsFromPolePlot.png", plot = mediaOfWinsFromPolePlot, units = "px", width = 2815, height = 1734)
 
 
 ############################ POSITION CHANGES PER CIRCUIT - POSITIONCHANGES/TOTALRACESINACIRCUIT
@@ -156,6 +208,13 @@ meanOfPositionChanges$CambiPosizioneMedi = positionChangesPerCircuitAllowed$n.x 
 
 #MEDIA OF POSITION CHANGES [CIRCUITID, LOCATION, CAMBIPOSIZIONEMEDI]
 #meanOfPositionChanges #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+meanOfPositionChangesPlot <- ggplot(meanOfPositionChanges, aes(x=reorder(location, -CambiPosizioneMedi), y=CambiPosizioneMedi)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge") +
+  xlab("Circuits") + 
+  ylab("Average of position changes") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/meanOfPositionChangesPlot.png", plot = meanOfPositionChangesPlot, units = "px", width = 2815, height = 1734)
+
 
 
 ############################ ACCIDENTS PER CIRCUIT - MOST DANGEROUS CIRCUIT
@@ -174,6 +233,14 @@ dnfAllowedCircuits <- dnfOfAllowedRacesCount %>% select(circuitId, n)
 #TOTAL OF DNF PER CIRCUIT [CIRCUITID, N (OF DNF)]
 dnfAllowedCircuits <- ddply(dnfAllowedCircuits, "circuitId", numcolwise(sum))
 #dnfAllowedCircuits #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+dnfAllowedCircuitsWLoc <- dnfAllowedCircuits %>% inner_join(circIdLoc, by = "circuitId") %>% select(location, n)
+dnfAllowedCircuitsPlot <- ggplot(dnfAllowedCircuitsWLoc, aes(x=reorder(location, -n), y=n)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge") +
+  xlab("Circuits") + 
+  ylab("Number of DNF") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/dnfAllowedCircuitsPlot.png", plot = dnfAllowedCircuitsPlot, units = "px", width = 2815, height = 1734)
+
 
 ############################  MEAN OF DNF PER CIRCUIT 
 totAndDnfPerCircuit <- dnfAllowedCircuits %>% inner_join(allowedCircuit, by = "circuitId")
@@ -184,3 +251,11 @@ meanOfDnfPerCircuit$meanOfDNF = trunc(meanOfDnfPerCircuit$meanOfDNF * 10^2)/10^2
 #MEAN OF DNF PER CIRCUIT [CIRCUITID, MEANOFDNF]
 onlyMeanOfDNF <- meanOfDnfPerCircuit %>% select(circuitId, meanOfDNF)
 #onlyMeanOfDNF  #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC #TO BE USED FOR GRAPHIC
+onlyMeanOfDNFWLoc <- onlyMeanOfDNF %>% inner_join(circIdLoc, by = "circuitId") %>% select(location, meanOfDNF)
+onlyMeanOfDNFPlot <- ggplot(onlyMeanOfDNFWLoc, aes(x=reorder(location, -meanOfDNF), y=meanOfDNF)) +
+  geom_bar(width=0.8, stat='identity', position = "dodge") +
+  xlab("Circuits") + 
+  ylab("Average of DNF") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/onlyMeanOfDNFPlot.png", plot = onlyMeanOfDNFPlot, units = "px", width = 2815, height = 1734)
+

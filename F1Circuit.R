@@ -98,7 +98,7 @@ winnerFromPolePlot <- ggplot(winnerFromPoleCountWLoc, aes(x=location, y=n, fill 
   geom_bar(width=0.8, stat='identity', position = "dodge") +
   scale_fill_discrete(name = "Has won from pole position") +
   xlab("Circuits") + 
-  ylab("Times") + 
+  ylab("Number of drivers") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/winnerFromPolePlot.png", plot = winnerFromPolePlot, units = "px", width = 2815, height = 1734)
 
@@ -119,7 +119,7 @@ differentWinnersPerCircuitWLoc <- differentWinnersPerCircuit %>% select(location
 differentWinnersPlot <- ggplot(differentWinnersPerCircuitWLoc, aes(x=reorder(location, -n, sum), y=n) ) +
   geom_bar(width=0.8, stat='identity', position = "dodge", fill = "darkturquoise") +
   xlab("Circuits") + 
-  ylab("Times") + 
+  ylab("Number of Different Winners") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave("C:/Users/paolo/Desktop/F1_Circuit_Project/output/differentWinnersPlot.png", plot = differentWinnersPlot, units = "px", width = 2815, height = 1734)
 
